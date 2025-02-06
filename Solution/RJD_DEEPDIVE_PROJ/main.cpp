@@ -38,10 +38,10 @@ struct ButtonData {
 
 void CheckButtons(WORD buttons, ButtonData& data);
 void HandleKeystroke(const XINPUT_KEYSTROKE& keystroke, ButtonData& data);
-
+void CheckControllerIput();
 //Keystroke info
 XINPUT_STATE state = {};
-DWORD controllerId = 0; // Usually, 0 is for the first controller
+DWORD controllerId = 0; //0 is for the first controller
 DWORD playerIndex{};
 DWORD reserve{};
 RECT rect = { 50, 50, 300, 200 };
@@ -95,24 +95,35 @@ int WINAPI wWinMain(_In_ HINSTANCE hInstance,
 
 	// Run the message loop.
 	MSG msg = { };
+
 	while (true)
 	{
-		while (GetMessage(&msg, NULL, 0, 0) > 0)
+		//This is the reason why my code was not working.
+		/*while (GetMessage(&msg, NULL, 0, 0) > 0)
 		{
-			DWORD result = XInputGetState(controllerId, &state);
+			TranslateMessage(&msg);
+			DispatchMessage(&msg);
+		}*/
 
-			if (result == ERROR_SUCCESS) {
-				// Controller is connected
-				//std::cout << "Controller " << controllerId << " is connected." << std::endl;
-				CheckButtons(state.Gamepad.wButtons, buttonStats);
-
-			}
+		while (PeekMessage(&msg, NULL, 0, 0, PM_REMOVE)) {
+			if (msg.message == WM_QUIT) return (int)msg.wParam;
 			TranslateMessage(&msg);
 			DispatchMessage(&msg);
 		}
-		InvalidateRect(hwnd, NULL, true);
-		Sleep(1);
+
+		DWORD result = XInputGetState(controllerId, &state);
+
+		if (result == ERROR_SUCCESS) {    
+			// Controller is connected
+			//std::cout << "Controller " << controllerId << " is connected." << std::endl;
+			CheckButtons(state.Gamepad.wButtons, buttonStats);
+			RedrawWindow(hwnd, NULL, NULL, RDW_INVALIDATE);
+		}
+
+		Sleep(8);
 	}
+
+	
 	
 
 	return 0;
@@ -122,8 +133,6 @@ LRESULT CALLBACK WindowProc(HWND hwnd, UINT uMsg, WPARAM wParam, LPARAM lParam)
 {
 	switch (uMsg)
 	{
-
-
 	case WM_DESTROY:
 		PostQuitMessage(0);
 		return 0;
@@ -234,12 +243,17 @@ void HandleKeystroke(const XINPUT_KEYSTROKE& keystroke, ButtonData& data)
 }
 
 void CheckButtons(WORD buttons, ButtonData& data)
-{
+                                                                                                                                                                        {
 
 	//FACE BUTTONS
 	if (buttons & XINPUT_GAMEPAD_A) {
 		//std::cout << "A button is pressed!" << std::endl;
  		data.A += 1;
+		isSpacePressed = true;
+	}
+	else
+	{
+		isSpacePressed = false;
 	}
 	if (buttons & XINPUT_GAMEPAD_B) {
 		std::cout << "B button is pressed!" << std::endl;
